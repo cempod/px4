@@ -42,7 +42,7 @@
 #include <poll.h>
 #include <string.h>
 #include <math.h>
-
+#include <termios.h>
 #include <uORB/uORB.h>
 #include <uORB/topics/sensor_combined.h>
 #include <uORB/topics/sensor_accel.h>
@@ -125,6 +125,42 @@ PX4_INFO("Hello NII STT");
 		 */
 	};
 	int error_counter = 0;
+
+
+int fd;
+
+fd = open("/dev/ttyS2", O_RDWR);
+if (fd < 0)
+    {
+      PX4_ERR("Unable to open file /dev/ttyS2");
+    }else{
+	PX4_ERR("Port was opened in /dev/ttyS2");
+    }
+
+    struct termios tty;
+
+if(tcgetattr(fd, &tty) != 0) {
+    PX4_ERR("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+}
+tty.c_cflag &= ~PARENB;
+tty.c_cflag &= ~CSTOPB;
+tty.c_cflag &= ~CSIZE;
+tty.c_cflag |= CS8;
+tty.c_cflag &= ~CRTSCTS;
+tty.c_cflag |= CREAD | CLOCAL;
+tty.c_lflag &= ~ICANON;
+tty.c_lflag &= ~ECHO;
+tty.c_lflag &= ~ISIG;
+tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
+tty.c_oflag &= ~OPOST;
+tty.c_oflag &= ~ONLCR;
+cfsetspeed(&tty, B115200);
+if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+    PX4_ERR("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+}
+
+
 	while (!should_exit()) {
 int poll_ret = px4_poll(fds, 1, 1000);
 if (poll_ret == 0) {
@@ -151,7 +187,8 @@ if (fds[0].revents & POLLIN) {
 					 (double)raw.accelerometer_m_s2[1],
 					 (double)raw.accelerometer_m_s2[2]);
 
-
+unsigned char msg[] = { 'H', 'e', 'l', 'l', 'o',' ',' ','L','O','L', '\r' };
+write(fd, msg, 10);
 			px4_usleep(1000000);
 	}
 
