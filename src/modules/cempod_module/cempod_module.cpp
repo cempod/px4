@@ -129,7 +129,7 @@ PX4_INFO("Hello NII STT");
 
 int fd;
 
-fd = open("/dev/ttyS2", O_RDWR);
+fd = ::open("/dev/ttyS2", O_RDWR);
 if (fd < 0)
     {
       PX4_ERR("Unable to open file /dev/ttyS2");
@@ -160,7 +160,9 @@ if (tcsetattr(fd, TCSANOW, &tty) != 0) {
     PX4_ERR("Error %i from tcsetattr: %s\n", errno, strerror(errno));
 }
 
+unsigned char msg[] = "Hello  PX4!";
 
+::write(fd, msg, 30);
 	while (!should_exit()) {
 int poll_ret = px4_poll(fds, 1, 1000);
 if (poll_ret == 0) {
@@ -182,13 +184,14 @@ if (fds[0].revents & POLLIN) {
 				struct sensor_combined_s raw;
 				/* copy sensors raw data into local buffer */
 				orb_copy(ORB_ID(sensor_accel), sensor_sub_fd, &raw);
-				PX4_INFO("Accelerometer:\t%8.4f\t%8.4f\t%8.4f",
+				PX4_INFO("Accelerometer:\t%8.2f\t%8.4f\t%8.4f",
 					 (double)raw.accelerometer_m_s2[0],
 					 (double)raw.accelerometer_m_s2[1],
 					 (double)raw.accelerometer_m_s2[2]);
 
-unsigned char msg[] = { 'H', 'e', 'l', 'l', 'o',' ',' ','L','O','L', '\r' };
-write(fd, msg, 10);
+char str[30] ;
+sprintf(str, "Accel: x=%8.4f,y=%8.4f.", (double)raw.accelerometer_m_s2[0],(double)raw.accelerometer_m_s2[1]);
+::write(fd, str, 30);
 			px4_usleep(1000000);
 	}
 
